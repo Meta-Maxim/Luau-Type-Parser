@@ -1,0 +1,6 @@
+{
+  "name": "luau-type-parser",
+  "tree": {
+    "$path": "lib"
+  }
+}
