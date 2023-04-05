@@ -258,6 +258,7 @@ function Parser:parseTableEnd()
 		if #self.stringBuffer > 0 then
 			local newMapType = Types.Map.new(Types.Number, self:parseString())
 			currentNode:AddMapType(newMapType)
+			currentNode.IsArray = true
 		end
 	elseif currentNode.Type == "Map" or currentNode.Type == "Field" then
 		if #self.stringBuffer > 0 then
@@ -327,6 +328,7 @@ function Parser:parseUnionBegin()
 		elseif currentNode.Type == "table" then
 			local newMapType = Types.Map.new(Types.Number, union)
 			currentNode:AddMapType(newMapType)
+			currentNode.IsArray = true
 			self:addToStack(newMapType)
 		end
 	end
@@ -406,6 +408,7 @@ function Parser:parseUnion()
 				newMapType.KeyType = Types.Number
 				newMapType.ValueType = union
 				currentNode:AddMapType(newMapType)
+				currentNode.IsArray = true
 				self:addToStack(newMapType)
 			end
 			self:addToStack(union)
