@@ -45,7 +45,7 @@ export type Parser = {
 	markTableClosed: () -> nil,
 	markUnionClosed: () -> nil,
 	markTupleWrapped: () -> nil,
-	parseString: (string?) -> Types.Type,
+	parseString: () -> Types.Type,
 	parseTableBegin: () -> nil,
 	parseTableEnd: () -> nil,
 	parseIndexBegin: () -> nil,
@@ -75,17 +75,14 @@ function Parser.new(parserOptions: ParserOptions?): Parser
 end
 
 function Parser:Parse(typeDefinition: string): Types.Type
+	local stringBuffer = self.stringBuffer
+
 	self.currentNode = nil
 	table.clear(self.typeStack)
 	table.clear(self.closedUnions)
 	table.clear(self.closedTables)
 	table.clear(self.wrappedTuples)
-	table.clear(self.stringBuffer)
-
-	local typeClass = self:parseString(typeDefinition)
-	if typeClass then
-		return typeClass
-	end
+	table.clear(stringBuffer)
 
 	for i = 1, string.len(typeDefinition) do
 		local char = string.sub(typeDefinition, i, i)
@@ -109,12 +106,12 @@ function Parser:Parse(typeDefinition: string): Types.Type
 			self:parseOptional()
 		elseif char == "," or char == ";" then
 			self:parseSeparator()
-		elseif string.find(char, "[%w_'\"%.]", 1, false) then
-			self.stringBuffer[#self.stringBuffer + 1] = char
+		elseif stringBuffer[1] == '"' or stringBuffer[1] == "'" or string.find(char, "[%w_'\"%.]", 1, false) then
+			stringBuffer[#stringBuffer + 1] = char
 		end
 	end
 
-	if #self.stringBuffer > 0 then
+	if #stringBuffer > 0 then
 		local keyType = self:parseString()
 		local currentNode = self.currentNode
 		if currentNode then
@@ -193,12 +190,16 @@ function Parser:markTupleWrapped()
 	self.wrappedTuples[self.currentNode] = true
 end
 
-function Parser:parseString(str: string?): Types.Type
-	local inputString = str or self:getBufferedString()
+local function trimWhitespace(str: string): string
+	return str:match("^%s*(.*%S)") or ""
+end
+
+function Parser:parseString(): Types.Type
+	local inputString = self:getBufferedString()
 
 	local firstChar = string.sub(inputString, 1, 1)
 	if firstChar == '"' or firstChar == "'" then
-		return Types.Literal.new(string.sub(inputString, 2, -2))
+		return Types.Literal.new(string.sub(trimWhitespace(inputString), 2, -2))
 	end
 
 	if Types.Globals[inputString] then
