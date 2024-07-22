@@ -588,7 +588,12 @@ function Parser:parseSeparator()
 							currentNode:AddType(self:parseString())
 						end
 						if #self.typeStack > 1 then
+							self:popStack()
+							currentNode = self.currentNode
 							self:popValueTypes()
+							if currentNode.Type == "Map" or currentNode.Type == "Field" then
+								return
+							end
 						end
 						if self:isTuplePossible() then
 							local tuple = Types.Tuple.new()
